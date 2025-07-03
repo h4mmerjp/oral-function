@@ -689,6 +689,384 @@ tr:hover {
   }
 }
 
+/* TCI Grid styles - 舌苔評価の9分割グリッド */
+.tci-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 8px;
+  width: 300px;
+  height: 240px;
+  margin: 20px auto;
+  border-radius: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.tci-cell {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 1.25rem;
+  border-radius: 8px;
+  color: #059669;
+}
+
+.tci-cell:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+.tci-cell.score-0 {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  color: #059669;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.tci-cell.score-1 {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.tci-cell.score-2 {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* Rating options - 管理方針・評価選択 */
+.rating-options {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.rating-option {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 16px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(229, 231, 235, 0.5);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  color: #374151;
+}
+
+.rating-option:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(167, 200, 240, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(167, 200, 240, 0.3);
+}
+
+.rating-option.selected {
+  background: linear-gradient(135deg, #a7c8f0 0%, #b8d4f0 100%);
+  color: #2563eb;
+  border-color: #2563eb;
+  box-shadow: 0 4px 16px rgba(167, 200, 240, 0.4);
+}
+
+/* EAT-10 styles - 嚥下機能評価 */
+.eat-10-question {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.eat-10-question p {
+  margin-bottom: 16px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.eat-10-options {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.eat-10-option {
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.eat-10-option:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.eat-10-option:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.eat-10-option:only-child {
+  border-radius: 8px;
+}
+
+.eat-10-option:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(167, 200, 240, 0.8);
+  color: #374151;
+}
+
+.eat-10-option.selected {
+  background: linear-gradient(135deg, #a7c8f0 0%, #b8d4f0 100%);
+  color: #2563eb;
+  border-color: #2563eb;
+  font-weight: 600;
+}
+
+/* Form improvements - フォーム要素の改善 */
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Table improvements - テーブルの改善 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+th, td {
+  padding: 16px 20px;
+  text-align: left;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.3);
+  vertical-align: top;
+}
+
+th {
+  background: rgba(248, 250, 252, 0.9);
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+tbody tr:hover {
+  background: rgba(248, 250, 252, 0.6);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Input improvements - 入力要素の改善 */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid rgba(229, 231, 235, 0.5);
+  border-radius: 12px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  color: #374151;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #a7c8f0;
+  box-shadow: 0 0 0 4px rgba(167, 200, 240, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Progress bar improvements - プログレスバーの改善 */
+.progress-bar-container {
+  width: 100%;
+  background: rgba(229, 231, 235, 0.5);
+  border-radius: 16px;
+  margin: 20px 0;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.progress-bar {
+  height: 28px;
+  background: linear-gradient(135deg, #a7c8f0 0%, #b8d4f0 50%, #93bbec 100%);
+  border-radius: 16px;
+  text-align: center;
+  color: #2563eb;
+  font-weight: 600;
+  line-height: 28px;
+  transition: width 0.5s ease;
+  font-size: 0.875rem;
+}
+
+/* Result box improvements - 結果ボックスの改善 */
+.result-box {
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(248, 250, 252, 0.9);
+  border-radius: 12px;
+  border-left: 4px solid #a7c8f0;
+  backdrop-filter: blur(10px);
+}
+
+.result-positive {
+  border-left-color: #f87171;
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.result-negative {
+  border-left-color: #34d399;
+  background: rgba(236, 253, 245, 0.9);
+}
+
+/* Modal improvements - モーダルの改善 */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  margin: 3% auto;
+  padding: 32px;
+  border: none;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90%;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.close {
+  color: #9ca3af;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  line-height: 1;
+}
+
+.close:hover,
+.close:focus {
+  color: #374151;
+}
+
+/* Responsive improvements - レスポンシブ改善 */
+@media (max-width: 768px) {
+  .tci-grid {
+    width: 260px;
+    height: 200px;
+    gap: 6px;
+    padding: 12px;
+  }
+  
+  .tci-cell {
+    font-size: 1rem;
+  }
+  
+  .rating-options {
+    flex-direction: column;
+  }
+  
+  .rating-option {
+    min-width: auto;
+  }
+  
+  .eat-10-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .eat-10-option {
+    border-radius: 8px !important;
+    margin-bottom: 4px;
+  }
+  
+  th, td {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+  }
+  
+  .modal-content {
+    margin: 5% auto;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tci-grid {
+    width: 220px;
+    height: 180px;
+    gap: 4px;
+    padding: 8px;
+  }
+  
+  .tci-cell {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}
+
 /* 印刷スタイル */
 @media print {
   .no-print {
@@ -704,5 +1082,28 @@ tr:hover {
   
   .floating-add {
     display: none;
+  }
+  
+  .tci-grid {
+    background: white;
+    border: 1px solid #000;
+  }
+  
+  .tci-cell {
+    background: white;
+    border: 1px solid #000;
+    color: #000;
+  }
+  
+  .rating-option {
+    background: white;
+    border: 1px solid #000;
+    color: #000;
+  }
+  
+  .eat-10-option {
+    background: white;
+    border: 1px solid #000;
+    color: #000;
   }
 }
