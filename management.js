@@ -210,7 +210,6 @@ class ManagementManager {
   // デフォルトの管理目標を生成
   generateDefaultGoals() {
     const assessment = assessmentManager.currentAssessment;
-    const patient = patientManager.currentPatient;
     
     let goals = `【管理方針】\n`;
     goals += `・口腔機能の維持・向上を目指し、個別の機能訓練プログラムを実施します\n`;
@@ -332,6 +331,111 @@ class ManagementManager {
   // 管理計画書印刷
   printManagementPlan() {
     window.print();
+  }
+
+  // 管理計画書の表示機能を追加
+  async viewManagementPlan(planId) {
+    try {
+      const plans = await db.getManagementPlans(patientManager.currentPatient.id);
+      const plan = plans.find(p => p.id === planId);
+      
+      if (plan) {
+        this.displayManagementPlanDetails(plan);
+        
+        // タブ切り替え
+        if (window.app) {
+          app.openTab('management-plan');
+        } else {
+          this.directTabSwitch('management-plan');
+        }
+      }
+    } catch (error) {
+      console.error('管理計画書詳細表示エラー:', error);
+      alert('詳細の表示に失敗しました');
+    }
+  }
+
+  // 管理計画書詳細の表示（新規追加）
+  displayManagementPlanDetails(plan) {
+    const content = document.getElementById('management-plan-content');
+    
+    if (!content) {
+      console.error('management-plan-content 要素が見つかりません');
+      return;
+    }
+    
+    const getPlanText = (value) => {
+      switch(value) {
+        case 1: return '問題なし';
+        case 2: return '機能維持';
+        case 3: return '機能向上';
+        default: return '設定なし';
+      }
+    };
+
+    content.innerHTML = `
+      <div class="summary-card">
+        <h3>管理計画書詳細</h3>
+        <p>患者名: ${patientManager.currentPatient.name}</p>
+        <p>計画作成日: ${new Date(plan.plan_date).toLocaleDateString()}</p>
+        <p>再評価予定: ${plan.reevaluation_period}ヶ月後</p>
+      </div>
+
+      <div class="summary-card">
+        <h3>管理方針</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>管理方針</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>① 口腔衛生状態</td>
+              <td>${getPlanText(plan.hygiene_plan)}</td>
+            </tr>
+            <tr>
+              <td>② 口腔乾燥</td>
+              <td>${getPlanText(plan.dryness_plan)}</td>
+            </tr>
+            <tr>
+              <td>③ 咬合力低下</td>
+              <td>${getPlanText(plan.bite_plan)}</td>
+            </tr>
+            <tr>
+              <td>④ 舌口唇運動機能低下</td>
+              <td>${getPlanText(plan.lip_plan)}</td>
+            </tr>
+            <tr>
+              <td>⑤ 低舌圧</td>
+              <td>${getPlanText(plan.tongue_pressure_plan)}</td>
+            </tr>
+            <tr>
+              <td>⑥ 咀嚼機能低下</td>
+              <td>${getPlanText(plan.mastication_plan)}</td>
+            </tr>
+            <tr>
+              <td>⑦ 嚥下機能低下</td>
+              <td>${getPlanText(plan.swallowing_plan)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="summary-card">
+        <h3>管理目標・計画</h3>
+        <div style="white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 4px;">
+          ${plan.goals || '記載なし'}
+        </div>
+      </div>
+
+      <div style="margin-top: 30px;">
+        <button onclick="managementManager.createManagementPlan()" class="btn-secondary">新規計画作成</button>
+        <button onclick="managementManager.printManagementPlan()" class="btn-secondary">印刷</button>
+        <button onclick="managementManager.loadProgressRecordForm()" class="btn-success">管理指導記録へ</button>
+      </div>
+    `;
   }
 
   // 管理指導記録フォームの読み込み
@@ -542,7 +646,7 @@ class ManagementManager {
     window.print();
   }
 
-  // 管理指導記録の詳細表示
+  // 管理指導記録の詳細表示（修正版）
   async viewProgressRecord(recordId) {
     try {
       const records = await db.getProgressRecords(patientManager.currentPatient.id);
@@ -550,6 +654,13 @@ class ManagementManager {
       
       if (record) {
         this.displayProgressRecordDetails(record);
+        
+        // タブ切り替えを追加
+        if (window.app) {
+          app.openTab('progress-record');
+        } else {
+          this.directTabSwitch('progress-record');
+        }
       }
     } catch (error) {
       console.error('管理指導記録詳細表示エラー:', error);

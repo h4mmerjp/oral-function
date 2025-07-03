@@ -288,6 +288,7 @@ class PatientManager {
           <button onclick="editPatient(${this.currentPatient.id})" class="btn-secondary">編集</button>
           <button onclick="startAssessment()" class="btn-success">検査開始</button>
           <button onclick="patientManager.openPatientHistory()" class="btn-secondary">履歴確認</button>
+          <button onclick="patientManager.showExistingManagementPlans()" class="btn-secondary">管理計画書確認</button>
         </div>
       </div>
 
@@ -380,6 +381,37 @@ class PatientManager {
       app.openTab('patient-history');
     } else {
       this.directTabSwitch('patient-history');
+    }
+  }
+
+  // 既存の管理計画書を表示（新規追加）
+  async showExistingManagementPlans() {
+    if (!this.currentPatient) {
+      alert('患者を選択してください');
+      return;
+    }
+
+    try {
+      const plans = await db.getManagementPlans(this.currentPatient.id);
+      
+      if (plans.length === 0) {
+        alert('この患者の管理計画書はまだ作成されていません。');
+        return;
+      }
+
+      // 最新の管理計画書を表示
+      const latestPlan = plans[0];
+      managementManager.displayManagementPlanDetails(latestPlan);
+      
+      if (window.app) {
+        app.openTab('management-plan');
+      } else {
+        this.directTabSwitch('management-plan');
+      }
+      
+    } catch (error) {
+      console.error('管理計画書表示エラー:', error);
+      alert('管理計画書の表示に失敗しました');
     }
   }
 
@@ -663,7 +695,7 @@ class PatientManager {
     }
   }
 
-  // 履歴表示
+  // 履歴表示（修正版）
   async loadPatientHistory() {
     if (!this.currentPatient) return;
 
@@ -672,16 +704,17 @@ class PatientManager {
     try {
       const assessments = await db.getAssessments(this.currentPatient.id);
       const progressRecords = await db.getProgressRecords(this.currentPatient.id);
+      const managementPlans = await db.getManagementPlans(this.currentPatient.id); // 追加
 
-      this.displayPatientHistory(assessments, progressRecords);
+      this.displayPatientHistory(assessments, progressRecords, managementPlans); // 引数追加
     } catch (error) {
       console.error('履歴読み込みエラー:', error);
       content.innerHTML = '<p>履歴の読み込みに失敗しました。</p>';
     }
   }
 
-  // 履歴表示
-  displayPatientHistory(assessments, progressRecords) {
+  // 履歴表示（修正版）
+  displayPatientHistory(assessments, progressRecords, managementPlans) {
     const content = document.getElementById('patient-history-content');
 
     let html = `
@@ -732,6 +765,45 @@ class PatientManager {
 
     html += '</div>';
 
+    // 管理計画書履歴を追加
+    html += `
+      <div class="summary-card">
+        <h3>管理計画書履歴</h3>
+    `;
+
+    if (managementPlans.length === 0) {
+      html += '<p>管理計画書がありません。</p>';
+    } else {
+      html += `
+        <table>
+          <thead>
+            <tr>
+              <th>作成日</th>
+              <th>再評価予定</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      managementPlans.forEach(plan => {
+        html += `
+          <tr>
+            <td>${new Date(plan.plan_date).toLocaleDateString()}</td>
+            <td>${plan.reevaluation_period}ヶ月後</td>
+            <td>
+              <button onclick="managementManager.viewManagementPlan(${plan.id})" class="btn-secondary" style="padding: 5px 10px;">詳細</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+    }
+
+    html += '</div>';
+
+    // 管理指導記録履歴
     html += `
       <div class="summary-card">
         <h3>管理指導記録</h3>
