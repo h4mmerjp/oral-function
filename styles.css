@@ -1107,3 +1107,87 @@ textarea::placeholder {
     color: #000;
   }
 }
+/* 聖隷式嚥下質問紙のスタイル */
+.seirei-question {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.seirei-question p {
+  margin-bottom: 16px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.seirei-options {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seirei-option {
+ flex: 1;
+ min-width: 120px;
+ text-align: center;
+ padding: 10px 8px;
+ background: rgba(255, 255, 255, 0.6);
+ border: 1px solid rgba(229, 231, 235, 0.5);
+ cursor: pointer;
+ transition: all 0.3s ease;
+ font-size: 0.875rem;
+ font-weight: 500;
+ color: #6b7280;
+ border-radius: 8px;
+}
+
+.seirei-option:hover {
+ background: rgba(255, 255, 255, 0.9);
+ border-color: rgba(167, 200, 240, 0.8);
+ color: #374151;
+ transform: translateY(-1px);
+}
+
+.seirei-option.selected {
+ background: linear-gradient(135deg, #a7c8f0 0%, #b8d4f0 100%);
+ color: #2563eb;
+ border-color: #2563eb;
+ font-weight: 600;
+ box-shadow: 0 2px 8px rgba(167, 200, 240, 0.3);
+}
+
+/* Aが選択された場合の強調表示 */
+.seirei-option[data-value="A"].selected {
+ background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+ color: #dc2626;
+ border-color: #dc2626;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+ .seirei-options {
+   flex-direction: column;
+   gap: 8px;
+ }
+ 
+ .seirei-option {
+   min-width: auto;
+   margin-bottom: 4px;
+ }
+}
+
+@media (max-width: 480px) {
+ .seirei-question {
+   padding: 16px;
+ }
+ 
+ .seirei-option {
+   padding: 12px 8px;
+   font-size: 0.8rem;
+ }
+}
