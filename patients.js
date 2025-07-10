@@ -663,7 +663,7 @@ class PatientManager {
     }
   }
 
-  // 履歴表示
+  // 履歴表示（管理計画書の履歴表示機能を追加）
   async loadPatientHistory() {
     if (!this.currentPatient) return;
 
@@ -672,16 +672,17 @@ class PatientManager {
     try {
       const assessments = await db.getAssessments(this.currentPatient.id);
       const progressRecords = await db.getProgressRecords(this.currentPatient.id);
+      const managementPlans = await db.getManagementPlans(this.currentPatient.id);
 
-      this.displayPatientHistory(assessments, progressRecords);
+      this.displayPatientHistory(assessments, progressRecords, managementPlans);
     } catch (error) {
       console.error('履歴読み込みエラー:', error);
       content.innerHTML = '<p>履歴の読み込みに失敗しました。</p>';
     }
   }
 
-  // 履歴表示
-  displayPatientHistory(assessments, progressRecords) {
+  // 履歴表示（管理計画書セクションを追加）
+  displayPatientHistory(assessments, progressRecords, managementPlans) {
     const content = document.getElementById('patient-history-content');
 
     let html = `
@@ -722,6 +723,64 @@ class PatientManager {
             <td>${assessment.affected_items_count}/7項目</td>
             <td>
               <button onclick="assessmentManager.viewAssessmentDetails(${assessment.id})" class="btn-secondary" style="padding: 5px 10px;">詳細</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+    }
+
+    html += '</div>';
+
+    // 【新規追加】管理計画書履歴セクション
+    html += `
+      <div class="summary-card">
+        <h3>管理計画書履歴</h3>
+    `;
+
+    if (managementPlans.length === 0) {
+      html += '<p>管理計画書がありません。</p>';
+    } else {
+      html += `
+        <table>
+          <thead>
+            <tr>
+              <th>作成日</th>
+              <th>対象検査</th>
+              <th>再評価予定</th>
+              <th>管理項目</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      managementPlans.forEach(plan => {
+        // 管理項目のカウント
+        const managementItems = [
+          plan.hygiene_plan,
+          plan.dryness_plan,
+          plan.bite_plan,
+          plan.lip_plan,
+          plan.tongue_pressure_plan,
+          plan.mastication_plan,
+          plan.swallowing_plan
+        ].filter(item => item !== null && item !== undefined).length;
+
+        // 再評価予定日の計算
+        const planDate = new Date(plan.plan_date);
+        const reevaluationDate = new Date(planDate);
+        reevaluationDate.setMonth(reevaluationDate.getMonth() + (plan.reevaluation_period || 6));
+
+        html += `
+          <tr>
+            <td>${new Date(plan.plan_date).toLocaleDateString()}</td>
+            <td>検査ID: ${plan.assessment_id || 'N/A'}</td>
+            <td>${reevaluationDate.toLocaleDateString()}</td>
+            <td>${managementItems}項目</td>
+            <td>
+              <button onclick="patientManager.viewManagementPlanDetails(${plan.id})" class="btn-secondary" style="padding: 5px 10px;">詳細</button>
             </td>
           </tr>
         `;
@@ -780,6 +839,117 @@ class PatientManager {
     html += '</div>';
 
     content.innerHTML = html;
+  }
+
+  // 【新規追加】管理計画書詳細表示
+  async viewManagementPlanDetails(planId) {
+    try {
+      const managementPlans = await db.getManagementPlans(this.currentPatient.id);
+      const plan = managementPlans.find(p => p.id === planId);
+      
+      if (plan) {
+        this.displayManagementPlanDetails(plan);
+      }
+    } catch (error) {
+      console.error('管理計画書詳細表示エラー:', error);
+      alert('詳細の表示に失敗しました');
+    }
+  }
+
+  // 【新規追加】管理計画書詳細の表示
+  displayManagementPlanDetails(plan) {
+    const content = document.getElementById('management-plan-content');
+    
+    if (!content) {
+      console.error('management-plan-content 要素が見つかりません');
+      return;
+    }
+
+    // 管理方針のテキスト変換
+    const managementText = (value) => {
+      switch(value) {
+        case 1: return '問題なし';
+        case 2: return '機能維持';
+        case 3: return '機能向上';
+        default: return '未設定';
+      }
+    };
+
+    // 再評価予定日の計算
+    const planDate = new Date(plan.plan_date);
+    const reevaluationDate = new Date(planDate);
+    reevaluationDate.setMonth(reevaluationDate.getMonth() + (plan.reevaluation_period || 6));
+
+    content.innerHTML = `
+      <div class="summary-card">
+        <h3>管理計画書詳細</h3>
+        <p>患者名: ${this.currentPatient.name}</p>
+        <p>作成日: ${new Date(plan.plan_date).toLocaleDateString()}</p>
+        <p>再評価予定: ${reevaluationDate.toLocaleDateString()} (${plan.reevaluation_period || 6}か月後)</p>
+      </div>
+
+      <div class="summary-card">
+        <h3>管理方針</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>管理方針</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>① 口腔衛生状態</td>
+              <td>${managementText(plan.hygiene_plan)}</td>
+            </tr>
+            <tr>
+              <td>② 口腔乾燥</td>
+              <td>${managementText(plan.dryness_plan)}</td>
+            </tr>
+            <tr>
+              <td>③ 咬合力低下</td>
+              <td>${managementText(plan.bite_plan)}</td>
+            </tr>
+            <tr>
+              <td>④ 舌口唇運動機能低下</td>
+              <td>${managementText(plan.lip_plan)}</td>
+            </tr>
+            <tr>
+              <td>⑤ 低舌圧</td>
+              <td>${managementText(plan.tongue_pressure_plan)}</td>
+            </tr>
+            <tr>
+              <td>⑥ 咀嚼機能低下</td>
+              <td>${managementText(plan.mastication_plan)}</td>
+            </tr>
+            <tr>
+              <td>⑦ 嚥下機能低下</td>
+              <td>${managementText(plan.swallowing_plan)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="summary-card">
+        <h3>管理目標・計画</h3>
+        <div style="white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
+${plan.goals || '記載なし'}
+        </div>
+      </div>
+
+      <div style="margin-top: 30px;">
+        <button onclick="patientManager.openPatientHistory()" class="btn-secondary">履歴に戻る</button>
+        <button onclick="window.print()" class="btn-secondary">印刷</button>
+        <button onclick="managementManager.loadProgressRecordForm()" class="btn-success">管理指導記録作成</button>
+      </div>
+    `;
+
+    // 管理計画書タブに移動
+    if (window.app) {
+      app.openTab('management-plan');
+    } else {
+      this.directTabSwitch('management-plan');
+    }
   }
 }
 
