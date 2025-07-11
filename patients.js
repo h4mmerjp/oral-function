@@ -1,4 +1,4 @@
-// 最終修正版患者管理モジュール
+// 最終修正版患者管理モジュール（患者数制限機能追加）
 class PatientManager {
   constructor() {
     this.currentPatient = null;
@@ -6,18 +6,248 @@ class PatientManager {
     console.log('PatientManager が初期化されました');
   }
 
-  // 患者一覧の読み込み
+  // 【新規追加】患者数制限チェック（既存機能を壊さない設計）
+  async checkPatientLimit() {
+    try {
+      // Firebase利用可能かチェック
+      if (window.firebaseManager && firebaseManager.isAvailable()) {
+        return await firebaseManager.checkPatientLimit();
+      } else {
+        // ローカルモードの場合は制限なし
+        return { 
+          allowed: true, 
+          isLocal: true,
+          message: 'ローカルモード（制限なし）'
+        };
+      }
+    } catch (error) {
+      console.error('患者数制限チェックエラー:', error);
+      // エラー時は制限なしで動作継続
+      return { 
+        allowed: true, 
+        isLocal: true,
+        message: 'エラー発生 - ローカルモードで続行'
+      };
+    }
+  }
+
+  // 【新規追加】患者数制限通知の表示
+  showPatientLimitNotification(limitInfo) {
+    if (limitInfo.isLocal) {
+      return; // ローカルモードでは通知しない
+    }
+
+    // 制限に近い場合の警告表示
+    if (limitInfo.current >= limitInfo.limit * 0.8) {
+      const remaining = limitInfo.limit - limitInfo.current;
+      this.showNotification(
+        `患者数が上限に近づいています。残り${remaining}人まで登録可能です。`,
+        'warning'
+      );
+    }
+  }
+
+  // 【新規追加】制限到達時のアップグレード促進
+  showUpgradePrompt(limitInfo) {
+    if (limitInfo.isLocal) {
+      return false; // ローカルモードでは表示しない
+    }
+
+    const upgradeModal = this.createUpgradeModal(limitInfo);
+    document.body.appendChild(upgradeModal);
+    upgradeModal.style.display = 'block';
+    return true;
+  }
+
+  // 【新規追加】アップグレードモーダルの作成
+  createUpgradeModal(limitInfo) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'upgrade-modal';
+    
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 500px;">
+        <h2 style="color: #e74c3c; text-align: center;">患者数上限に達しました</h2>
+        
+        <div style="text-align: center; margin: 20px 0;">
+          <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">
+            ${limitInfo.current} / ${limitInfo.limit}人
+          </div>
+          <p>現在のプラン（${limitInfo.plan === 'free' ? '無料プラン' : 'プレミアムプラン'}）の上限に達しています</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #2c3e50; margin-top: 0;">プレミアムプランの特典</h3>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>患者数無制限</li>
+            <li>データバックアップ機能</li>
+            <li>優先サポート</li>
+            <li>高度な統計機能</li>
+          </ul>
+          <div style="text-align: center; margin-top: 15px;">
+            <span style="font-size: 18px; font-weight: bold; color: #e74c3c;">月額 2,980円</span>
+            <span style="color: #666; margin-left: 10px;">（年額プラン: 29,800円で2ヶ月分お得）</span>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <button onclick="patientManager.closeUpgradeModal()" class="btn-secondary">後で</button>
+          <button onclick="patientManager.startUpgradeProcess()" class="btn-success" style="margin-left: 10px;">プレミアムにアップグレード</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px;">
+          <small style="color: #666;">
+            既存のデータはそのまま保持されます。いつでもキャンセル可能です。
+          </small>
+        </div>
+      </div>
+    `;
+
+    return modal;
+  }
+
+  // 【新規追加】アップグレードモーダルを閉じる
+  closeUpgradeModal() {
+    const modal = document.getElementById('upgrade-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  // 【新規追加】アップグレード処理開始（将来実装）
+  startUpgradeProcess() {
+    alert('アップグレード機能は次のフェーズで実装予定です。\n現在はデモ版のため、この機能は利用できません。');
+    this.closeUpgradeModal();
+  }
+
+  // 【新規追加】通知表示機能
+  showNotification(message, type = 'info') {
+    // 既存の通知を削除
+    const existingNotification = document.getElementById('patient-notification');
+    if (existingNotification) {
+      existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.id = 'patient-notification';
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'warning' ? '#f39c12' : type === 'error' ? '#e74c3c' : '#3498db'};
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 10000;
+      max-width: 300px;
+      font-size: 14px;
+      line-height: 1.4;
+    `;
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: flex-start; gap: 10px;">
+        <div style="flex: 1;">${message}</div>
+        <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px; padding: 0;">×</button>
+      </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // 5秒後に自動削除
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+
+  // 患者一覧の読み込み（既存機能はそのまま）
   async loadPatients() {
     try {
       const patients = await db.getPatients();
       this.displayPatients(patients);
+      
+      // 【新規追加】患者数制限情報の表示（既存機能に影響なし）
+      await this.updatePatientCountDisplay(patients.length);
     } catch (error) {
       console.error('患者一覧読み込みエラー:', error);
       this.displayPatients([]);
     }
   }
 
-  // 患者一覧を表示
+  // 【新規追加】患者数表示の更新
+  async updatePatientCountDisplay(currentCount) {
+    try {
+      const limitInfo = await this.checkPatientLimit();
+      
+      if (!limitInfo.isLocal) {
+        // Firebase利用時のみ制限情報を表示
+        this.displayPatientCountInfo(limitInfo);
+        
+        // Firebase利用時は使用量を更新
+        if (window.firebaseManager && firebaseManager.isAvailable()) {
+          await firebaseManager.updatePatientCount(currentCount);
+        }
+      }
+    } catch (error) {
+      console.error('患者数表示更新エラー:', error);
+    }
+  }
+
+  // 【新規追加】患者数情報の表示
+  displayPatientCountInfo(limitInfo) {
+    // 患者一覧の検索コンテナに制限情報を追加
+    const searchContainer = document.querySelector('.search-container');
+    if (!searchContainer) return;
+
+    // 既存の制限情報表示を削除
+    const existingInfo = document.getElementById('patient-limit-info');
+    if (existingInfo) {
+      existingInfo.remove();
+    }
+
+    const limitInfoElement = document.createElement('div');
+    limitInfoElement.id = 'patient-limit-info';
+    limitInfoElement.style.cssText = `
+      background: ${limitInfo.current >= limitInfo.limit ? '#fdedec' : limitInfo.current >= limitInfo.limit * 0.8 ? '#fef9e7' : '#eafaf1'};
+      border: 1px solid ${limitInfo.current >= limitInfo.limit ? '#e74c3c' : limitInfo.current >= limitInfo.limit * 0.8 ? '#f39c12' : '#2ecc71'};
+      color: ${limitInfo.current >= limitInfo.limit ? '#e74c3c' : limitInfo.current >= limitInfo.limit * 0.8 ? '#f39c12' : '#2ecc71'};
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `;
+
+    const remaining = limitInfo.limit - limitInfo.current;
+    const planText = limitInfo.plan === 'free' ? '無料プラン' : 'プレミアムプラン';
+    
+    limitInfoElement.innerHTML = `
+      <div>
+        <strong>${planText}</strong>: ${limitInfo.current} / ${limitInfo.limit}人
+        ${remaining > 0 ? `（残り ${remaining}人）` : '（上限到達）'}
+      </div>
+      ${limitInfo.plan === 'free' && limitInfo.current >= limitInfo.limit * 0.8 ? 
+        '<button onclick="patientManager.showUpgradeInfo()" class="btn-warning" style="padding: 5px 10px; font-size: 12px;">アップグレード</button>' : ''}
+    `;
+
+    searchContainer.insertBefore(limitInfoElement, searchContainer.firstChild);
+  }
+
+  // 【新規追加】アップグレード情報表示
+  showUpgradeInfo() {
+    this.showUpgradePrompt({
+      current: 4, // デモ用
+      limit: 5,   // デモ用
+      plan: 'free',
+      isLocal: false
+    });
+  }
+
+  // 患者一覧を表示（既存機能はそのまま）
   async displayPatients(patients) {
     const container = document.getElementById('patients-grid');
     
@@ -61,7 +291,7 @@ class PatientManager {
     container.innerHTML = html;
   }
 
-  // 年齢計算
+  // 年齢計算（既存機能はそのまま）
   calculateAge(birthdate) {
     if (!birthdate) return '不明';
     const today = new Date();
@@ -74,7 +304,7 @@ class PatientManager {
     return age;
   }
 
-  // 患者のステータスを取得
+  // 患者のステータスを取得（既存機能はそのまま）
   getPatientStatus(assessment) {
     if (!assessment) {
       return { class: 'pending', text: '未診断' };
@@ -87,7 +317,7 @@ class PatientManager {
     }
   }
 
-  // 患者検索
+  // 患者検索（既存機能はそのまま）
   searchPatients() {
     const searchTerm = document.getElementById('search-patients').value.toLowerCase();
     const cards = document.querySelectorAll('.patient-card');
@@ -102,7 +332,7 @@ class PatientManager {
     });
   }
 
-  // 患者フィルタ
+  // 患者フィルタ（既存機能はそのまま）
   filterPatients() {
     const filterStatus = document.getElementById('filter-status').value;
     const cards = document.querySelectorAll('.patient-card');
@@ -116,7 +346,7 @@ class PatientManager {
     });
   }
 
-  // 患者選択（完全修正版）
+  // 患者選択（既存機能はそのまま）
   async selectPatient(patientId) {
     try {
       console.log('=== 患者選択開始 ===');
@@ -158,7 +388,7 @@ class PatientManager {
     }
   }
 
-  // 直接タブ切り替え（app オブジェクトが利用できない場合の代替手段）
+  // 直接タブ切り替え（既存機能はそのまま）
   directTabSwitch(tabName) {
     try {
       console.log('直接タブ切り替えを実行:', tabName);
@@ -196,7 +426,7 @@ class PatientManager {
     }
   }
 
-  // すべての患者関連データをクリア（修正版）
+  // すべての患者関連データをクリア（既存機能はそのまま）
   clearAllPatientData() {
     console.log('すべての患者データをクリア中...');
     
@@ -249,7 +479,7 @@ class PatientManager {
     console.log('データクリア完了');
   }
 
-  // 患者情報を読み込み（完全修正版）
+  // 患者情報を読み込み（既存機能はそのまま）
   async loadPatientInfo() {
     if (!this.currentPatient) {
       console.error('currentPatient が設定されていません');
@@ -374,7 +604,7 @@ class PatientManager {
     console.log('患者情報読み込み完了');
   }
 
-  // 履歴タブを開く（修正版）
+  // 履歴タブを開く（既存機能はそのまま）
   openPatientHistory() {
     if (window.app) {
       app.openTab('patient-history');
@@ -383,7 +613,7 @@ class PatientManager {
     }
   }
 
-  // 服用薬剤の詳細表示切り替え（修正版）
+  // 服用薬剤の詳細表示切り替え（既存機能はそのまま）
   toggleMedicationDetails() {
     if (!this.currentPatient) return;
     
@@ -399,7 +629,7 @@ class PatientManager {
     }
   }
 
-  // BMI計算（修正版）
+  // BMI計算（既存機能はそのまま）
   calculateBMI() {
     if (!this.currentPatient) return;
     
@@ -420,7 +650,7 @@ class PatientManager {
     }
   }
 
-  // 全身状態の保存（修正版）
+  // 全身状態の保存（既存機能はそのまま）
   async saveGeneralConditions() {
     if (!this.currentPatient) return;
 
@@ -448,7 +678,7 @@ class PatientManager {
     }
   }
 
-  // 全身状態の読み込み（修正版）
+  // 全身状態の読み込み（既存機能はそのまま）
   async loadGeneralConditions() {
     if (!this.currentPatient) {
       console.warn('currentPatient が設定されていません');
@@ -473,7 +703,7 @@ class PatientManager {
     }
   }
 
-  // 全身状態フォームのクリア（修正版）
+  // 全身状態フォームのクリア（既存機能はそのまま）
   clearGeneralConditionsForm() {
     if (!this.currentPatient) return;
     
@@ -511,7 +741,7 @@ class PatientManager {
     }
   }
 
-  // 全身状態フォームの入力（修正版）
+  // 全身状態フォームの入力（既存機能はそのまま）
   fillGeneralConditionsForm(condition) {
     if (!this.currentPatient) return;
     
@@ -563,7 +793,7 @@ class PatientManager {
     }
   }
 
-  // モーダル関連
+  // モーダル関連（既存機能はそのまま）
   showAddPatientModal() {
     document.getElementById('modal-title').textContent = '新規患者登録';
     document.getElementById('patient-form').reset();
@@ -620,11 +850,26 @@ class PatientManager {
     }
   }
 
-  // 患者フォーム送信処理
+  // 患者フォーム送信処理（制限チェック機能追加）
   async handlePatientFormSubmit(event) {
     event.preventDefault();
     
     const editId = document.getElementById('edit-patient-id').value;
+    
+    // 【新規追加】新規登録時の患者数制限チェック
+    if (!editId) {
+      const limitInfo = await this.checkPatientLimit();
+      
+      if (!limitInfo.allowed && !limitInfo.isLocal) {
+        // 制限に達している場合
+        this.showUpgradePrompt(limitInfo);
+        return; // 登録を中止
+      }
+      
+      // 制限に近い場合は警告表示
+      this.showPatientLimitNotification(limitInfo);
+    }
+    
     const patientData = {
       name: document.getElementById('modal-patient-name').value,
       patient_id: document.getElementById('modal-patient-id').value,
@@ -652,6 +897,10 @@ class PatientManager {
         // 新規登録
         updatedPatient = await db.createPatient(patientData);
         alert('患者が登録されました');
+        
+        // 【新規追加】新規登録成功時の使用量更新
+        const patients = await db.getPatients();
+        await this.updatePatientCountDisplay(patients.length);
       }
       
       this.closeAddPatientModal();
@@ -733,7 +982,7 @@ class PatientManager {
 
     html += '</div>';
 
-    // 【新規追加】管理計画書履歴セクション
+    // 管理計画書履歴セクション
     html += `
       <div class="summary-card">
         <h3>管理計画書履歴</h3>
@@ -841,7 +1090,7 @@ class PatientManager {
     content.innerHTML = html;
   }
 
-  // 【新規追加】管理計画書詳細表示
+  // 管理計画書詳細表示
   async viewManagementPlanDetails(planId) {
     try {
       const managementPlans = await db.getManagementPlans(this.currentPatient.id);
@@ -856,7 +1105,7 @@ class PatientManager {
     }
   }
 
-  // 【新規追加】管理計画書詳細の表示
+  // 管理計画書詳細の表示
   displayManagementPlanDetails(plan) {
     const content = document.getElementById('management-plan-content');
     
